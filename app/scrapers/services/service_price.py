@@ -14,6 +14,7 @@ def service_price(
     Execute price search and process the response.
     Returns CompetitorPrice if successful, None if failed.
     """
+    print(f"Executing price search for competitor data ID: {competitor_data_id}")
     price_response = price_executor(params=params)
 
     # For debugging

@@ -208,22 +208,6 @@ class Request:
                 timeout=random.uniform(20, 35),
                 cookies=cookies or {},
             )
-            test_response: Response = getattr(requests, method)(
-                "https://www.httpbin.org/ip",
-                headers=self.randomized_headers,
-                data=data,
-                params=params,
-                impersonate=self.impersonation,
-                proxies=proxy,
-                extra_fp=fp,
-                curl_options=self.curl_opts,
-                verify=True,
-                allow_redirects=True,
-                timeout=random.uniform(20, 35),
-                cookies=cookies or {},
-            )
-            print(test_response.text)
-
             return SyncResponse(
                 response=response,
                 fingerprint=fp,

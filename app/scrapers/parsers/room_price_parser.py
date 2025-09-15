@@ -1,3 +1,4 @@
+import json
 from typing import Dict, List, TypedDict
 
 from ...db.models import LeadHotelRunModel
@@ -23,17 +24,34 @@ class RoomPriceParser:
         self.response = response
         self.params = params
         self.competitor_data_id = competitor_data_id
+        with open("debug/response.json", "w") as f:
+            json.dump(response, f, indent=4)
 
     def _get_categorized_listings(self) -> List[Dict[any, any]]:
-        data_block = self.response.get("data", {})
+        print(f"DEBUG: response structure: {type(self.response)}")
+        response_data = self.response.get("response", None)
+        print(f"DEBUG: response_data type: {type(response_data)}")
+
+        if response_data is None:
+            raise Exception("Response data is None")
+
+        data_block = response_data.get("data", {})
+        print(f"DEBUG: data_block type: {type(data_block)}")
+
+        with open("debug/data_block.json", "w") as f:
+            json.dump(data_block, f, indent=4)
         if not data_block:
             raise Exception("No data block found")
 
         property_offers = data_block.get("propertyOffers", {})
+        print(f"DEBUG: property_offers type: {type(property_offers)}")
         if not property_offers:
             raise Exception("No property offers found")
 
         categorized_listings = property_offers.get("categorizedListings", [])
+        print(
+            f"DEBUG: categorized_listings type: {type(categorized_listings)}, length: {len(categorized_listings) if categorized_listings else 'None'}"
+        )
         if not categorized_listings:
             raise Exception("No categorized listings found")
 
@@ -209,6 +227,10 @@ class RoomPriceParser:
             "price_details_total_price": None,
         }
         extras: List[ExtraDetails] = []
+
+        with open("debug/primary_selections.json", "w") as f:
+            json.dump(primary_selections, f, indent=4)
+
         for selection in primary_selections:
             rate_plans = selection.get("ratePlans", [])
             secondary_selections = selection.get("secondarySelections", [])
@@ -271,10 +293,23 @@ class RoomPriceParser:
 
     def _get_room_details(self, room: Dict[any, any]) -> RoomDetails:
         features_block = room.get("features", None)
+        print(
+            f"DEBUG: features_block type: {type(features_block)}, value: {features_block}"
+        )
+
         guests = None  # * change this for main expedia
+        if features_block is None:
+            print("WARNING: features_block is None, returning default room details")
+            return RoomDetails(room_details_guests=guests)
+
         for feature in features_block:
-            if feature.get("graphic", {}).get("graphic", None).get("id") == "people":
+            print(f"DEBUG: Processing feature: {feature}")
+            graphic = feature.get("graphic", {})
+            print(f"DEBUG: graphic: {graphic}")
+            # Updated to handle the actual structure where graphic has direct 'id' field
+            if graphic and graphic.get("id") == "people":
                 guests = feature.get("text", None)
+                print(f"DEBUG: Found guests info: {guests}")
                 break
 
         return RoomDetails(room_details_guests=guests)
@@ -287,14 +322,32 @@ class RoomPriceParser:
             categorized_listings = self._get_categorized_listings()
             url = contruct_url(params=self.params)
 
-            for room in categorized_listings:
+            for i, room in enumerate(categorized_listings):
+                print(f"DEBUG: Processing room {i}: {type(room)}")
                 primary_selections = room.get("primarySelections", [])
+                print(
+                    f"DEBUG: primary_selections type: {type(primary_selections)}, length: {len(primary_selections) if primary_selections else 'None'}"
+                )
                 if not primary_selections:
+                    print(f"DEBUG: Skipping room {i} - no primary selections")
                     continue
+
+                print(f"DEBUG: Calling _get_room_details for room {i}")
                 room_details = self._get_room_details(room=room)
+                print(f"DEBUG: Got room_details: {room_details}")
+
                 property_unit = primary_selections[0].get("propertyUnit", {})
+                print(f"DEBUG: property_unit type: {type(property_unit)}")
                 sold_out = self._check_if_room_is_sold_out(property_unit=property_unit)
-                room_name = room.get("header", {}).get("title", None)
+                print(f"DEBUG: sold_out: {sold_out}")
+
+                header = room.get("header", {})
+                print(f"DEBUG: header type: {type(header)}, value: {header}")
+                # Try both 'title' and 'text' fields for room name
+                room_name = None
+                if header:
+                    room_name = header.get("title", None) or header.get("text", None)
+                print(f"DEBUG: room_name: {room_name}")
                 if not room_name:
                     raise Exception("No room name found")
 

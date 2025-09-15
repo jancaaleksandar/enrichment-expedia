@@ -16,13 +16,10 @@ from ..utils.mappers.map_hotel_competitor_data import map_hotel_competitor_data
 def service_competitors_search(
     request_params: LeadHotelRunModel, database_session: Session
 ) -> List[LeadHotelCompetitorData]:
-
-    competitor_data_in_database = DatabaseFunctions.get_hotel_competitor_data(
+    # Fetch any existing competitor data for this lead and provider
+    existing_competitor_data = DatabaseFunctions.get_hotel_competitor_data(
         database_session=database_session, request_params=request_params
     )
-
-    if competitor_data_in_database:
-        return competitor_data_in_database
 
     competitor_data_response = competitor_search_executor(params=request_params)
     with open("competitor_data_response.json", "w") as f:
@@ -36,12 +33,26 @@ def service_competitors_search(
         json.dump(competitor_details_parsed, f, indent=4)
 
     competitor_data_mapped = map_hotel_competitor_data(
-        competitor_data=competitor_details_parsed, params=request_params
+        competitor_data=competitor_details_parsed["competitor_details_parsed"],
+        params=request_params,
     )
 
-    competitor_data_saved = DatabaseFunctions.save_hotel_competitor_data(
-        competitor_data=competitor_data_mapped, database_session=database_session
+    # Deduplicate by provider_id to avoid inserting duplicates for the same lead/provider
+    existing_provider_ids = set(
+        c.lead_hotel_competitor_data_request_provider_id
+        for c in existing_competitor_data
     )
+    to_save = [
+        c
+        for c in competitor_data_mapped
+        if c.lead_hotel_competitor_data_request_provider_id not in existing_provider_ids
+    ]
 
-    # * we are returning the saved object that was refreshed by the function so we can use the competitor_data_id later
-    return competitor_data_saved
+    saved_competitors: List[LeadHotelCompetitorData] = []
+    if to_save:
+        saved_competitors = DatabaseFunctions.save_hotel_competitor_data(
+            database_session=database_session, competitor_data=to_save
+        )
+
+    # Return the union of existing and newly saved records (all with IDs)
+    return [*existing_competitor_data, *saved_competitors]
