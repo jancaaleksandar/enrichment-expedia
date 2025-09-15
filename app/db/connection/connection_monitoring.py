@@ -1,13 +1,15 @@
 from typing import Any
-from sqlalchemy import event, Engine
+
+from sqlalchemy import Engine, event
 from sqlalchemy.pool.base import ConnectionPoolEntry, PoolProxiedConnection
+
 
 def setup_connection_monitoring(engine: Engine) -> None:
     """
     Set up event listeners to track connection usage.
     """
     connection_count = 0
-    
+
     @event.listens_for(engine, "checkout")
     def receive_checkout(
         dbapi_connection: Any,
@@ -17,7 +19,7 @@ def setup_connection_monitoring(engine: Engine) -> None:
         nonlocal connection_count
         connection_count += 1
         print(f"Connection checkout: Active connections: {connection_count}")
-    
+
     @event.listens_for(engine, "checkin")
     def receive_checkin(
         dbapi_connection: Any,

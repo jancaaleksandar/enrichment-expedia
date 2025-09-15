@@ -2,8 +2,9 @@ from typing import Optional
 
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import sessionmaker, scoped_session, Session
+from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from sqlalchemy.orm.scoping import ScopedSession
+
 from .connection_monitoring import setup_connection_monitoring
 
 
@@ -11,7 +12,7 @@ class DatabaseManager:
     _instance: Optional["DatabaseManager"] = None
     _engine: Optional[Engine] = None
     _session_factory: Optional[ScopedSession[Session]] = None
-    
+
     @classmethod
     def get_database_url(cls) -> str:
         engine = "postgresql"
@@ -58,13 +59,15 @@ class DatabaseManager:
                     pool_recycle=3600,
                     pool_pre_ping=True,
                     pool_use_lifo=True,
-                    echo_pool=True
+                    echo_pool=True,
                 )
 
                 # Set up monitoring
                 setup_connection_monitoring(self._engine)
 
-                print(f"Database engine created with pool_size={pool_size}, max_overflow={max_overflow}")
+                print(
+                    f"Database engine created with pool_size={pool_size}, max_overflow={max_overflow}"
+                )
 
             except Exception as e:
                 print(f"Error creating database engine: {e}")
@@ -86,8 +89,7 @@ class DatabaseManager:
             Session: SQLAlchemy session instance
         """
         # Get engine with specified pool settings
-        engine = self.get_engine(
-            pool_size=pool_size, max_overflow=max_overflow)
+        engine = self.get_engine(pool_size=pool_size, max_overflow=max_overflow)
 
         # Create a new session factory if needed
         if self._session_factory is None:
@@ -97,7 +99,9 @@ class DatabaseManager:
             self._session_factory.configure(bind=engine)
 
         session: Session = self._session_factory()
-        print(f"Database session created with pool_size={pool_size}, max_overflow={max_overflow}")
+        print(
+            f"Database session created with pool_size={pool_size}, max_overflow={max_overflow}"
+        )
         return session
 
     def dispose_engine(self) -> None:
@@ -109,6 +113,7 @@ class DatabaseManager:
                 self._session_factory = None
             except Exception as e:
                 print(f"Error disposing database engine: {e}")
+
 
 # Wrapper functions for backwards compatibility
 
@@ -124,7 +129,9 @@ def create_database_connection(pool_size: int = 1, max_overflow: int = 0) -> Ses
     Returns:
         Session: SQLAlchemy session instance
     """
-    return DatabaseManager.get_instance().create_session(pool_size=pool_size, max_overflow=max_overflow)
+    return DatabaseManager.get_instance().create_session(
+        pool_size=pool_size, max_overflow=max_overflow
+    )
 
 
 def dispose_engine() -> None:

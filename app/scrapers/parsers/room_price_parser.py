@@ -1,4 +1,3 @@
-import json
 from typing import Dict, List, TypedDict
 
 from ...db.models import LeadHotelRunModel
@@ -24,8 +23,8 @@ class RoomPriceParser:
         self.response = response
         self.params = params
         self.competitor_data_id = competitor_data_id
-        with open("debug/response.json", "w") as f:
-            json.dump(response, f, indent=4)
+        # with open("debug/response.json", "w") as f:
+        #     json.dump(response, f, indent=4)
 
     def _get_categorized_listings(self) -> List[Dict[any, any]]:
         print(f"DEBUG: response structure: {type(self.response)}")
@@ -38,8 +37,8 @@ class RoomPriceParser:
         data_block = response_data.get("data", {})
         print(f"DEBUG: data_block type: {type(data_block)}")
 
-        with open("debug/data_block.json", "w") as f:
-            json.dump(data_block, f, indent=4)
+        # with open("debug/data_block.json", "w") as f:
+        #     json.dump(data_block, f, indent=4)
         if not data_block:
             raise Exception("No data block found")
 
@@ -228,8 +227,8 @@ class RoomPriceParser:
         }
         extras: List[ExtraDetails] = []
 
-        with open("debug/primary_selections.json", "w") as f:
-            json.dump(primary_selections, f, indent=4)
+        # with open("debug/primary_selections.json", "w") as f:
+        #     json.dump(primary_selections, f, indent=4)
 
         for selection in primary_selections:
             rate_plans = selection.get("ratePlans", [])

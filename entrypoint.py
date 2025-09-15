@@ -1,13 +1,14 @@
-import socket
 import os
-from typing import Any, Dict, Optional
+import socket
 from datetime import datetime
+from typing import Any, Dict, Optional
+
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from app.processor import processor
-from app.db.models import LeadHotelRunModel
 
+from app.db.models import LeadHotelRunModel
+from app.processor import processor
 
 app = FastAPI(title="Leads Booking API", version="0.1.0")
 
@@ -35,7 +36,7 @@ async def health() -> Dict[str, str]:
 async def ingest_event(request: LeadHotelRunRequest) -> Any:
     if not request.lead_hotel_run_id:
         raise HTTPException(status_code=400, detail="lead_hotel_run_id is required")
-    
+
     # Convert Pydantic model to SQLAlchemy model
     model = LeadHotelRunModel(
         lead_hotel_run_id=request.lead_hotel_run_id,
@@ -45,14 +46,18 @@ async def ingest_event(request: LeadHotelRunRequest) -> Any:
         lead_hotel_run_request_provider=request.lead_hotel_run_request_provider,
         lead_hotel_run_request_provider_id=request.lead_hotel_run_request_provider_id,
         lead_hotel_run_request_region=request.lead_hotel_run_request_region,
-        lead_hotel_run_request_check_in_date=datetime.fromisoformat(request.lead_hotel_run_request_check_in_date),
+        lead_hotel_run_request_check_in_date=datetime.fromisoformat(
+            request.lead_hotel_run_request_check_in_date
+        ),
         lead_hotel_run_request_length_of_stay=request.lead_hotel_run_request_length_of_stay,
         lead_hotel_run_type=request.lead_hotel_run_type,
-        lead_hotel_run_created_at=datetime.fromisoformat(request.lead_hotel_run_created_at)
+        lead_hotel_run_created_at=datetime.fromisoformat(
+            request.lead_hotel_run_created_at
+        ),
     )
-    
+
     response = processor(model)
-    
+
     # Create debug directory if it doesn't exist
     os.makedirs("debug", exist_ok=True)
     return response
@@ -72,4 +77,4 @@ def get_local_ip():
 if __name__ == "__main__":
     host_ip = get_local_ip()
     print(f"Starting server on {host_ip}:7890")
-    uvicorn.run("entrypoint:app", host="0.0.0.0", port=7890, reload=True) # type: ignore
+    uvicorn.run("entrypoint:app", host="0.0.0.0", port=7890, reload=True)  # type: ignore

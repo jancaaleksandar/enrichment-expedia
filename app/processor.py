@@ -1,5 +1,3 @@
-import json
-import os
 from typing import List
 
 from .db.connection.db_manager import create_database_connection
@@ -27,18 +25,18 @@ def processor(params: LeadHotelRunModel) -> bool:
 
         all_competitor_prices: List[RoomDetails] = []
         if str(params.lead_hotel_run_type) == "COMPETITOR_ENRICHMENT_PRICE":
-            os.makedirs("debug", exist_ok=True)
-            serializable_competitors = [
-                {
-                    "lead_hotel_competitor_data_id": competitor.lead_hotel_competitor_data_id,
-                    "lead_hotel_competitor_data_request_provider_id": competitor.lead_hotel_competitor_data_request_provider_id,
-                    "lead_hotel_competitor_data_request_provider_url": competitor.lead_hotel_competitor_data_request_provider_url,
-                    "lead_hotel_competitor_data_hotel_name": competitor.lead_hotel_competitor_data_hotel_name,
-                }
-                for competitor in competitors_data
-            ]
-            with open("debug/competitor_data.json", "w") as f:
-                json.dump(serializable_competitors, f, indent=4)
+            # os.makedirs("debug", exist_ok=True)
+            # serializable_competitors = [
+            #     {
+            #         "lead_hotel_competitor_data_id": competitor.lead_hotel_competitor_data_id,
+            #         "lead_hotel_competitor_data_request_provider_id": competitor.lead_hotel_competitor_data_request_provider_id,
+            #         "lead_hotel_competitor_data_request_provider_url": competitor.lead_hotel_competitor_data_request_provider_url,
+            #         "lead_hotel_competitor_data_hotel_name": competitor.lead_hotel_competitor_data_hotel_name,
+            #     }
+            #     for competitor in competitors_data
+            # ]
+            # with open("debug/competitor_data.json", "w") as f:
+            #     json.dump(serializable_competitors, f, indent=4)
             for competitor in competitors_data:
                 competitor_params = LeadHotelRunModel(
                     lead_hotel_run_id=params.lead_hotel_run_id,
