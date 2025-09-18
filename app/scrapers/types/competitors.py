@@ -11,6 +11,7 @@ class CompetitorParsedData(TypedDict):
     competitor_parsed_data_hotel_id: str
     competitor_parsed_data_hotel_name: str
     competitor_parsed_data_hotel_url: str
+    competitor_parsed_data_position: int
 
 
 class CompetitorPrice(CompetitorParsedData):

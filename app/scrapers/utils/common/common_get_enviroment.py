@@ -9,9 +9,10 @@ def get_environment():
     # If not found and we're in local environment, try load_dotenv
     if env is None:
         try:
-            from dotenv import load_dotenv
 
-            load_dotenv()
+            from dotenv import load_dotenv  # type: ignore
+
+            load_dotenv()  # type: ignore
             env = os.getenv("ENVIRONMENT")
         except ImportError:
             # If dotenv isn't available, that's okay in Lambda

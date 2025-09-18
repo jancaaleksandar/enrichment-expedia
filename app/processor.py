@@ -1,4 +1,4 @@
-from typing import List
+from typing import cast
 
 from .db.connection.db_manager import create_database_connection
 from .db.db_functions import DatabaseFunctions
@@ -9,6 +9,12 @@ from .scrapers.types.room import RoomDetails
 from .scrapers.utils.mappers.map_raw_hotel_data import map_raw_hotel_data
 
 
+class ProcessorError(Exception):
+    """Custom exception for processor-related errors."""
+
+    pass
+
+
 def processor(params: LeadHotelRunModel) -> bool:
     database_session = create_database_connection(pool_size=5, max_overflow=10)
     try:
@@ -17,13 +23,13 @@ def processor(params: LeadHotelRunModel) -> bool:
             request_params=params, database_session=database_session
         )
         if not competitor_response:
-            raise Exception("No competitor data found")
+            raise ProcessorError("No competitor data found")
 
         competitors_data = competitor_response
         if not competitors_data:
-            raise Exception("No competitor details found in response")
+            raise ProcessorError("No competitor details found in response")
 
-        all_competitor_prices: List[RoomDetails] = []
+        all_competitor_prices: list[RoomDetails] = []
         if str(params.lead_hotel_run_type) == "COMPETITOR_ENRICHMENT_PRICE":
             # os.makedirs("debug", exist_ok=True)
             # serializable_competitors = [
@@ -54,12 +60,13 @@ def processor(params: LeadHotelRunModel) -> bool:
 
                 offer_room_details = service_price(
                     params=competitor_params,
-                    competitor_data_id=competitor.lead_hotel_competitor_data_id,
+                    competitor_data_id=cast(
+                        int, competitor.lead_hotel_competitor_data_id
+                    ),
                 )
-                if offer_room_details is not None:
-                    all_competitor_prices.append(offer_room_details)
-                else:
-                    raise Exception("No price data found for competitor")
+                if not offer_room_details:
+                    raise ProcessorError("No price data found for competitor")
+                all_competitor_prices.extend(offer_room_details)
 
         raw_hotel_data_mapped = map_raw_hotel_data(
             room_offer_details=all_competitor_prices, params=params
@@ -69,10 +76,10 @@ def processor(params: LeadHotelRunModel) -> bool:
         )
 
         if not raw_hotel_data_saved:
-            raise Exception("Failed to save raw hotel data")
+            raise ProcessorError("Failed to save raw hotel data")
+        else:
+            return True
 
-        return True
-
-    except Exception as e:
-        print(f"Error in processor: {str(e)}")
+    except (ProcessorError, ValueError, KeyError, TypeError) as e:
+        print(f"Error in processor: {e!s}")
         return False

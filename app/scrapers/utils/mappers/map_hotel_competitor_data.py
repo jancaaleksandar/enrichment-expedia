@@ -1,15 +1,14 @@
 from datetime import datetime
-from typing import List
 
 from ....db.models import LeadHotelCompetitorData, LeadHotelRunModel
 from ...types.competitors import CompetitorParsedData
 
 
 def map_hotel_competitor_data(
-    competitor_data: List[CompetitorParsedData],
+    competitor_data: list[CompetitorParsedData],
     params: LeadHotelRunModel,
-) -> List[LeadHotelCompetitorData]:
-    lead_hotel_competitor_data_list: List[LeadHotelCompetitorData] = []
+) -> list[LeadHotelCompetitorData]:
+    lead_hotel_competitor_data_list: list[LeadHotelCompetitorData] = []
     for competitor in competitor_data:
         lead_hotel_competitor_data = LeadHotelCompetitorData(
             lead_hotel_competitor_lead_id=params.lead_hotel_run_lead_id,
@@ -30,6 +29,9 @@ def map_hotel_competitor_data(
             lead_hotel_competitor_data_hotel_review_score=None,
             lead_hotel_competitor_data_hotel_review_count=None,
             lead_hotel_competitor_data_created_at=datetime.now(),
+            lead_hotel_competitor_data_position=competitor[
+                "competitor_parsed_data_position"
+            ],
         )
         lead_hotel_competitor_data_list.append(lead_hotel_competitor_data)
     return lead_hotel_competitor_data_list

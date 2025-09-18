@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import cast
+
 from ....db.models import LeadHotelRunModel
 from .common_calculate_check_out_date import calculate_check_out_date
 from .common_date_to_dict import date_to_dict
@@ -5,10 +8,12 @@ from .common_date_to_dict import date_to_dict
 
 def contruct_url(params: LeadHotelRunModel) -> str:
 
-    check_in_date = date_to_dict(params.lead_hotel_run_request_check_in_date)
+    check_in_date = date_to_dict(
+        cast(datetime, params.lead_hotel_run_request_check_in_date)
+    )
     check_out_date_datetime = calculate_check_out_date(
-        params.lead_hotel_run_request_check_in_date,
-        params.lead_hotel_run_request_length_of_stay,
+        cast(datetime, params.lead_hotel_run_request_check_in_date),
+        cast(int, params.lead_hotel_run_request_length_of_stay),
     )
     check_out_date = date_to_dict(check_out_date_datetime)
     # check_out_date = date_to_dict(params.task__parsing_end_date)

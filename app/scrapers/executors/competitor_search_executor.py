@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Dict, TypedDict
+from typing import TypedDict, cast
 
 from ...db.models import LeadHotelRunModel
 from ..configuration.competitor_search_configuration import (
@@ -12,7 +12,7 @@ from ..utils.http.http_request import Request
 
 class CompetitorSearchExecutorResponse(TypedDict):
     successfully_scraped: bool
-    response: dict | None
+    response: dict[str, object] | None
 
 
 def competitor_search_executor(
@@ -26,7 +26,7 @@ def competitor_search_executor(
     """
     successfully_scraped = False
     response = None
-    persistent_cookies: Dict[str, str] = {}
+    persistent_cookies: dict[str, str] = {}
 
     try:
         for attempt in range(max_retries):
@@ -40,28 +40,28 @@ def competitor_search_executor(
                 request_params["request_cookies"] = persistent_cookies or None
 
                 resp = Request(params=request_params).curl_request_api_post()
-                response = resp["response"]
+                resp_obj = resp["response"]
 
-                if response.status_code == 200:
+                if resp_obj.status_code == 200:
                     print("200 status code...")
-                    response = response.json()
+                    response = cast(dict[str, object], resp_obj.json())  # type: ignore
                     successfully_scraped = True
                     break  # Exit loop on success
 
-                if response.status_code == 429:
+                if resp_obj.status_code == 429:
                     print("429 status code... retrying in 6 seconds")
 
                     # Extract cookies for next attempt
                     try:
-                        if hasattr(response, "cookies") and response.cookies:
+                        if hasattr(resp_obj, "cookies") and resp_obj.cookies:
                             cookies_dict = {
-                                name: value for name, value in response.cookies.items()
+                                name: value for name, value in resp_obj.cookies.items()
                             }
                             print(f"⚠️  429 cookies found: {len(cookies_dict)} cookies")
                             if "bm_s" in cookies_dict:
                                 persistent_cookies["bm_s"] = cookies_dict["bm_s"]
                                 print("🎯 Captured bm_s from 429 response")
-                    except Exception as cookie_error:
+                    except Exception as cookie_error:  # noqa: BLE001
                         print(
                             f"Error extracting cookies from 429 response: {cookie_error}"
                         )
@@ -69,19 +69,26 @@ def competitor_search_executor(
                     time.sleep(6)
                     continue
 
-                print(f"Unexpected status code: {response.status_code}")
+                print(f"Unexpected status code: {resp_obj.status_code}")
 
-            except Exception as e:
-                print(f"Exception occurred in attempt {attempt + 1}: {str(e)}")
+            except (
+                ValueError,
+                ConnectionError,
+                TimeoutError,
+                json.JSONDecodeError,
+            ) as e:
+                print(f"Exception occurred in attempt {attempt + 1}: {e!s}")
 
             print(f"Attempt {attempt + 1} failed, continuing to next attempt")
 
-    except Exception as e:
-        print(f"Fatal error in competitor search: {str(e)}")
+    except (ValueError, ConnectionError, TimeoutError, json.JSONDecodeError) as e:
+        print(f"Fatal error in competitor search: {e!s}")
         successfully_scraped = False
         response = None
 
     finally:
-        return CompetitorSearchExecutorResponse(
-            successfully_scraped=successfully_scraped, response=response
-        )
+        pass
+
+    return CompetitorSearchExecutorResponse(
+        successfully_scraped=successfully_scraped, response=response
+    )

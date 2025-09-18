@@ -6,7 +6,7 @@ WORKDIR /app
 # Prevent Python from writing .pyc files and enable unbuffered logs
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PORT=6789 \
+    PORT=7890 \
     HOST=0.0.0.0
 
 # Install Python dependencies
@@ -17,7 +17,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Expose the API port
-EXPOSE 6789
+EXPOSE 7890
 
 # Run uvicorn directly (production-friendly, no reload)
-ENTRYPOINT ["uvicorn", "entrypoint:app", "--host", "0.0.0.0", "--port", "6789"]
+ENTRYPOINT ["uvicorn", "entrypoint:app", "--host", "0.0.0.0", "--port", "7890"]

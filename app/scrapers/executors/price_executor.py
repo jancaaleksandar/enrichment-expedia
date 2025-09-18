@@ -1,6 +1,6 @@
 import json
 import time
-from typing import Dict, TypedDict
+from typing import TypedDict, cast
 
 from ...db.models import LeadHotelRunModel
 from ..configuration.price_configuration import get_price_configuration
@@ -10,7 +10,7 @@ from ..utils.http.http_request import Request
 
 class PriceExecutorResponse(TypedDict):
     successfully_scraped: bool
-    response: dict | None
+    response: dict[str, object] | None
 
 
 def price_executor(
@@ -24,7 +24,7 @@ def price_executor(
     """
     successfully_scraped = False
     response = None
-    persistent_cookies: Dict[str, str] = {}
+    persistent_cookies: dict[str, str] = {}
 
     try:
         for attempt in range(max_retries):
@@ -40,36 +40,36 @@ def price_executor(
                 price_configuration["request_cookies"] = persistent_cookies or None
 
                 resp = Request(params=price_configuration).curl_request_api_post()
-                response = resp["response"]
+                resp_obj = resp["response"]
 
-                if response.status_code == 200:
+                if resp_obj.status_code == 200:
                     print("200 status code...")
                     try:
-                        response = response.json()
+                        response = resp_obj.json()  # type: ignore
                         with open("price_response.json", "w") as f:
                             json.dump(response, f, indent=4)
                         successfully_scraped = True
                         break  # Exit loop on success
-                    except Exception as e:
-                        print(f"Failed to parse JSON response: {str(e)}")
+                    except ValueError as e:
+                        print(f"Failed to parse JSON response: {e!s}")
                         # Save raw response for debugging
                         with open("raw_price_response.txt", "w") as f:
-                            f.write(response.text)
+                            f.write(resp_obj.text)
 
-                if response.status_code == 429:
+                if resp_obj.status_code == 429:
                     print("429 status code... retrying in 6 seconds")
 
                     # Extract cookies for next attempt
                     try:
-                        if hasattr(response, "cookies") and response.cookies:
+                        if hasattr(resp_obj, "cookies") and resp_obj.cookies:
                             cookies_dict = {
-                                name: value for name, value in response.cookies.items()
+                                name: value for name, value in resp_obj.cookies.items()
                             }
                             print(f"⚠️  429 cookies found: {len(cookies_dict)} cookies")
                             if "bm_s" in cookies_dict:
                                 persistent_cookies["bm_s"] = cookies_dict["bm_s"]
                                 print("🎯 Captured bm_s from 429 response")
-                    except Exception as cookie_error:
+                    except ValueError as cookie_error:
                         print(
                             f"Error extracting cookies from 429 response: {cookie_error}"
                         )
@@ -77,18 +77,24 @@ def price_executor(
                     time.sleep(6)
                     continue
 
-                print(f"Unexpected status code: {response.status_code}")
+                print(f"Unexpected status code: {resp_obj.status_code}")
 
-            except Exception as e:
-                print(f"Exception occurred in attempt {attempt + 1}: {str(e)}")
+            except (
+                ValueError,
+                ConnectionError,
+                TimeoutError,
+                json.JSONDecodeError,
+            ) as e:
+                print(f"Exception occurred in attempt {attempt + 1}: {e!s}")
 
             print(f"Attempt {attempt + 1} failed, continuing to next attempt")
 
-    except Exception as e:
-        print(f"Fatal error in price search: {str(e)}")
+    except (ValueError, ConnectionError, TimeoutError, json.JSONDecodeError) as e:
+        print(f"Fatal error in price search: {e!s}")
         successfully_scraped = False
         response = None
 
     return PriceExecutorResponse(
-        successfully_scraped=successfully_scraped, response=response
+        successfully_scraped=successfully_scraped,
+        response=cast(dict[str, object] | None, response),
     )

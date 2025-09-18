@@ -76,6 +76,7 @@ class LeadHotelCompetitorData(Base):
     )
     lead_hotel_competitor_data_hotel_review_count = Column(Integer, nullable=True)
     lead_hotel_competitor_data_created_at = Column(DateTime, nullable=False)
+    lead_hotel_competitor_data_position = Column(Integer, nullable=True)
 
 
 class RawHotelData(Base):

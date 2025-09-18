@@ -12,8 +12,6 @@ def construct_number_of_nights(check_in_date: date, check_out_date: date) -> int
     Returns:
         The number of nights (days) between the two dates.
     """
-    if not isinstance(check_in_date, date) or not isinstance(check_out_date, date):
-        raise TypeError("Both check_in_date and check_out_date must be date objects.")
 
     if check_out_date < check_in_date:
         raise ValueError("Check-out date cannot be earlier than check-in date.")

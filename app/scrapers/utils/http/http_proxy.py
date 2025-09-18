@@ -510,5 +510,5 @@ LOCATION_ISO_CODES = {
 
 
 def get_proxy(location: str) -> str:
-    proxy = "http://u5cfakq7sclif2qixsdp:xf0rtgbsb88ny48mmnh3h@scrapoxy.roompulse.internal:8888"
+    proxy = "http://spfrgk8g21:j_Rc8gppu58EZzUmb4@isp.decodo.com:10000"
     return proxy

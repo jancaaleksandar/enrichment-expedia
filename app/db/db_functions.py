@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -12,10 +12,10 @@ class DatabaseFunctions:
     def update_lead_hotel_run(
         session: Session,
         lead_hotel_run_id: int,
-        status: Optional[str] = None,
-        state: Optional[str] = None,
+        status: str | None,
+        state: str | None,
     ) -> bool:
-        updates: Dict[Any, Any] = {}
+        updates: dict[Any, Any] = {}
         if status is not None:
             updates[LeadHotelRunModel.lead_hotel_run_status] = status
         if state is not None:
@@ -34,7 +34,7 @@ class DatabaseFunctions:
     @staticmethod
     def get_hotel_competitor_data(
         database_session: Session, request_params: LeadHotelRunModel
-    ) -> List[LeadHotelCompetitorData]:
+    ) -> list[LeadHotelCompetitorData]:
         """
         Get hotel competitor data filtering by lead ID and provider.
 
@@ -59,8 +59,8 @@ class DatabaseFunctions:
     @staticmethod
     def save_hotel_competitor_data(
         database_session: Session,
-        competitor_data: List[LeadHotelCompetitorData],
-    ) -> List[LeadHotelCompetitorData]:
+        competitor_data: list[LeadHotelCompetitorData],
+    ) -> list[LeadHotelCompetitorData]:
         database_session.add_all(competitor_data)
         database_session.commit()
         # Refresh all objects to get their database-assigned IDs and any other DB-generated values
@@ -70,7 +70,7 @@ class DatabaseFunctions:
 
     @staticmethod
     def save_raw_hotel_data(
-        database_session: Session, raw_hotel_data: List[RawHotelData]
+        database_session: Session, raw_hotel_data: list[RawHotelData]
     ) -> bool:
         database_session.add_all(raw_hotel_data)
         database_session.commit()

@@ -1,61 +1,73 @@
-from typing import Dict, List, TypedDict
+from typing import TypedDict, cast
 
 from ..types.competitors import CompetitorParsedData
 
 
 class CompetitorDetailsParserResponse(TypedDict):
-    competitor_details_parsed: List[CompetitorParsedData]
+    competitor_details_parsed: list[CompetitorParsedData]
     successfully_parsed: bool
 
 
 class CompetitorDetailsParser:
-    def __init__(self, response: dict):
+    def __init__(self, response: dict[str, object]):
         self.response = response
 
-    def _get_cards(self) -> List[Dict[any, any]]:
+    def _get_cards(self) -> list[dict[str, object]]:
         data_block = self.response.get("data", {})
         if not data_block:
-            raise Exception("No data block found")
-        recommendations_module = data_block.get("recommendationsModule", {})
+            raise ValueError("No data block found")
+        recommendations_module = cast(dict[str, object], data_block).get(
+            "recommendationsModule", {}
+        )
         if not recommendations_module:
-            raise Exception("No recommendations module found")
+            raise ValueError("No recommendations module found")
 
-        cards_block = recommendations_module.get("cards", [])
+        cards_block = cast(dict[str, object], recommendations_module).get("cards", [])
         if not cards_block:
-            raise Exception("No cards block found")
-        return cards_block
+            raise ValueError("No cards block found")
+        return cast(list[dict[str, object]], cards_block)
 
-    def _parse_card(self, card: Dict[any, any]) -> CompetitorParsedData:
+    def _parse_card(
+        self, card: dict[str, object], position: int
+    ) -> CompetitorParsedData:
         heading = card.get("heading", {})
         if not heading:
-            raise Exception("No heading found")
-        hotel_name = heading.get("title", None)
+            raise ValueError("No heading found")
+        hotel_name = cast(dict[str, object], heading).get("title", None)
         if not hotel_name:
-            raise Exception("No hotel name found")
+            raise ValueError("No hotel name found")
 
         hotel_id = card.get("id", None)
         if not hotel_id:
-            raise Exception("No hotel id found")
+            raise ValueError("No hotel id found")
 
-        hotel_url = card.get("cardAction", {}).get("resource", {}).get("value", None)
+        hotel_url = cast(
+            dict[str, object],
+            cast(dict[str, object], card.get("cardAction", {})).get("resource", {}),
+        ).get("value", None)
         if not hotel_url:
-            raise Exception("No hotel url found")
+            raise ValueError("No hotel url found")
 
         return CompetitorParsedData(
-            competitor_parsed_data_hotel_id=hotel_id,
-            competitor_parsed_data_hotel_name=hotel_name,
-            competitor_parsed_data_hotel_url=hotel_url,
+            competitor_parsed_data_hotel_id=cast(str, hotel_id),
+            competitor_parsed_data_hotel_name=cast(str, hotel_name),
+            competitor_parsed_data_hotel_url=cast(str, hotel_url),
+            competitor_parsed_data_position=position,
         )
 
     def parse(self):
         successfully_parsed = False
-        competitor_details_parsed: List[CompetitorParsedData] = []
+        competitor_details_parsed: list[CompetitorParsedData] = []
         try:
             cards = self._get_cards()
-            for card in cards:
-                competitor_details_parsed.append(self._parse_card(card=card))
+            competitor_details_parsed.extend(
+                [
+                    self._parse_card(card=card, position=idx)
+                    for idx, card in enumerate(cards)
+                ]
+            )
             successfully_parsed = True
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
             print(f"Error parsing competitor details: {e}")
             successfully_parsed = False
 

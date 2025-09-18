@@ -1,4 +1,4 @@
-from typing import List, Optional, TypedDict
+from typing import TypedDict
 
 
 class ExtraDetails(TypedDict):
@@ -12,8 +12,8 @@ class RefundableDetails(TypedDict):
 
 
 class PriceDetails(TypedDict):
-    price_details_night_price: Optional[float]
-    price_details_total_price: Optional[float]
+    price_details_night_price: float | None
+    price_details_total_price: float | None
 
 
 class OfferDetails(TypedDict):
@@ -21,9 +21,9 @@ class OfferDetails(TypedDict):
     offer_details_price_total: float
     offer_details_refundable: bool
     offer_details_refundable_description: str
-    offer_details_extras: List[ExtraDetails] = None
+    offer_details_extras: list[ExtraDetails] | None
     offer_details_url: str
-    offer_details_competitor_data_id: Optional[int]
+    offer_details_competitor_data_id: int | None
 
 
 class RoomDetails(OfferDetails):

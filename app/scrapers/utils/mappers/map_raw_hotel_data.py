@@ -1,15 +1,15 @@
+from collections.abc import Sequence
 from datetime import datetime
-from typing import List
 
 from ....db.models import LeadHotelRunModel, RawHotelData
 from ...types.room import RoomDetails
 
 
 def map_raw_hotel_data(
-    room_offer_details: List[RoomDetails],
+    room_offer_details: Sequence[RoomDetails],
     params: LeadHotelRunModel,
-) -> List[RawHotelData]:
-    raw_hotel_data_list: List[RawHotelData] = []
+) -> list[RawHotelData]:
+    raw_hotel_data_list: list[RawHotelData] = []
     for detail in room_offer_details:
         raw_hotel_data = RawHotelData(
             raw_hotel_data_lead_id=params.lead_hotel_run_lead_id,
